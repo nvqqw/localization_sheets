@@ -160,7 +160,7 @@ written.
 
 ## Screenshot
 
-![localization_sheets example output](https://raw.githubusercontent.com/quinvq/localization_sheets/main/screenshot/example.jpg)
+![localization_sheets example output](https://raw.githubusercontent.com/nvqqw/localization_sheets/1884a7696875a1790e673f4358f0f550cc27c5f1/screenshot/example.jpg)
 
 ## Programmatic usage
 
