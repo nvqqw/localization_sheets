@@ -249,9 +249,9 @@ class _Settings {
       );
     }
 
-    final output =
-        options.outputDirectory ?? config?.output ?? _defaultOutput;
-    final checkMissing = options.checkMissing || (config?.checkMissing ?? false);
+    final output = options.outputDirectory ?? config?.output ?? _defaultOutput;
+    final checkMissing =
+        options.checkMissing || (config?.checkMissing ?? false);
     return _Settings(
       input: input,
       outputDirectory: output,
@@ -315,7 +315,10 @@ class _Config {
       case 'url':
         final url = _stringOr(path, node['url'], 'input.url');
         if (url == null || url.isEmpty) {
-          throw InputReadException(path, 'input.url is required when type: url.');
+          throw InputReadException(
+            path,
+            'input.url is required when type: url.',
+          );
         }
         return _InputSource.url(url);
       case 'file':
@@ -441,7 +444,8 @@ class _UsageException implements Exception {
   final String message;
 }
 
-const String _usage = '''
+const String _usage =
+    '''
 localization_sheets — CSV → per-language JSON converter
 
 The first language column in the sheet is the primary language: it is the
