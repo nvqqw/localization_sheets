@@ -1,0 +1,19 @@
+name: localization_sheets_example
+description: >-
+  Example project showing how to convert a Google Sheets localization export
+  into per-language JSON with the localization_sheets CLI.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  # Depend on the package under development from the parent directory so
+  # `dart run localization_sheets` resolves to the local tool.
+  localization_sheets:
+    path: ../
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.0

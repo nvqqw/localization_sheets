@@ -1,0 +1,24 @@
+# Configuration for the `localization_sheets` CLI.
+#
+# When you run `dart run localization_sheets` in this directory (with no flags),
+# the tool reads these settings automatically. Command-line flags, if given,
+# override anything here.
+
+input:
+  # Two input types are supported: "url" and "file".
+
+  # URL input — the CSV is downloaded before it is parsed. This is a public
+  # Google Sheet exported as CSV.
+  type: url
+  url: https://docs.google.com/spreadsheets/d/1sdF7zHtyTCoxlX5DPTxtRde2N6Y1fxgQKilAcSA-WU8/export?format=csv
+
+  # File input — point at a local CSV on disk instead. Uncomment these two lines
+  # (and comment out the `type`/`url` pair above) to convert the bundled sample:
+  # type: file
+  # path: input/localizations.csv
+
+# Where the per-language JSON files are written (one <code>.json per language).
+output: assets/translations
+
+# Warn about keys present in the primary language but missing/empty elsewhere.
+check_missing: true
