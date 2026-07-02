@@ -7,7 +7,7 @@ version: 0.1.0
 repository: https://github.com/quinvq/localization_sheets
 
 environment:
-  sdk: ^3.12.0
+  sdk: ^3.10.0
 
 # This package is a pure-Dart command line tool. The core read → parse → write
 # library has no runtime dependencies; the CLI adds `yaml` so it can read an
