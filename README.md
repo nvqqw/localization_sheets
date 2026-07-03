@@ -41,7 +41,7 @@ dart run localization_sheets --input example/input/localizations.csv --output as
 …or download and convert a **remote CSV**, such as a Google Sheets export link:
 
 ```bash
-dart run localization_sheets --url "https://docs.google.com/…/export?format=csv" --output assets/translations
+dart run localization_sheets --url "https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv" --output assets/translations
 ```
 
 ### Options
@@ -84,7 +84,7 @@ To download a remote sheet instead, swap the `input` block:
 ```yaml
 input:
   type: url                         # download the CSV before parsing
-  url: https://docs.google.com/…/export?format=csv
+  url: https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv
 ```
 
 `check_missing: true` in the config is the same as passing `--check-missing`.
@@ -159,6 +159,8 @@ Warnings go to stderr and do not fail the conversion — the JSON files are stil
 written.
 
 ## Screenshot
+
+Example Google Sheet: [https://docs.google.com/spreadsheets/d/1sdF7zHtyTCoxlX5DPTxtRde2N6Y1fxgQKilAcSA-WU8](https://docs.google.com/spreadsheets/d/1sdF7zHtyTCoxlX5DPTxtRde2N6Y1fxgQKilAcSA-WU8)
 
 ![localization_sheets example output](https://raw.githubusercontent.com/nvqqw/localization_sheets/1884a7696875a1790e673f4358f0f550cc27c5f1/screenshot/example.jpg)
 

@@ -475,7 +475,7 @@ OPTIONS:
 CONFIG FILE ($_defaultConfigFile):
   input:
     type: url                 # "file" or "url"
-    url: https://…/export?format=csv
+    url: https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv
     # type: file
     # path: input/localizations.csv
   output: assets/translations
@@ -483,5 +483,5 @@ CONFIG FILE ($_defaultConfigFile):
 
 EXAMPLES:
   dart run localization_sheets -i input/localizations.csv -o build/l10n
-  dart run localization_sheets -u "https://…/export?format=csv" -o assets/translations
+  dart run localization_sheets -u "https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv" -o assets/translations
 ''';
