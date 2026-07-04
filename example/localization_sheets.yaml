@@ -22,3 +22,9 @@ output: assets/translations
 
 # Warn about keys present in the primary language but missing/empty elsewhere.
 check_missing: true
+
+# Commands to run after the JSON files are written — a single string or a list.
+# Handy for formatting or staging the output. A command that fails stops the
+# rest and fails the run. Uncomment to try it:
+# run_after:
+#   - dart format assets/translations

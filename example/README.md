@@ -37,7 +37,7 @@ The config supports two input types; switch between them by editing
 ```yaml
 input:
   type: url                       # download a remote CSV before parsing
-  url: https://…/export?format=csv
+  url: https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv
 
 # or:
 # input:
@@ -52,7 +52,7 @@ Command-line flags override the config file:
 dart run localization_sheets --input input/localizations.csv --output assets/translations
 
 # Convert a URL:
-dart run localization_sheets --url "https://…/export?format=csv" --output assets/translations
+dart run localization_sheets --url "https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv" --output assets/translations
 ```
 
 ## Run the library example (offline)
