@@ -83,10 +83,50 @@ Future<void> main(List<String> arguments) async {
   } on LocalizationSheetsException catch (error) {
     stderr.writeln('Error: ${error.message}');
     exitCode = _exitCodeFor(error);
+    return;
   } catch (error) {
     // Anything not modelled by the package is an internal error.
     stderr.writeln('Unexpected error: $error');
     exitCode = _exitSoftware;
+    return;
+  }
+
+  // The conversion succeeded; run any post-write hook commands in order.
+  await _runAfterCommands(settings.afterCommands);
+}
+
+/// Runs each command in [commands] through the platform shell, in order, after
+/// a successful conversion. Output is inherited so the commands write directly
+/// to the terminal.
+///
+/// Stops at the first command that exits non-zero and sets [exitCode] to that
+/// command's exit code, so a failing hook fails the whole run.
+Future<void> _runAfterCommands(List<String> commands) async {
+  for (final command in commands) {
+    stdout.writeln('\nRunning: $command');
+    final Process process;
+    try {
+      process = Platform.isWindows
+          ? await Process.start('cmd', [
+              '/c',
+              command,
+            ], mode: ProcessStartMode.inheritStdio)
+          : await Process.start('/bin/sh', [
+              '-c',
+              command,
+            ], mode: ProcessStartMode.inheritStdio);
+    } on ProcessException catch (error) {
+      stderr.writeln('Error: could not run "$command": ${error.message}');
+      exitCode = _exitSoftware;
+      return;
+    }
+
+    final code = await process.exitCode;
+    if (code != 0) {
+      stderr.writeln('Error: command "$command" exited with code $code.');
+      exitCode = code;
+      return;
+    }
   }
 }
 
@@ -217,11 +257,15 @@ class _Settings {
     required this.input,
     required this.outputDirectory,
     required this.checkMissing,
+    required this.afterCommands,
   });
 
   final _InputSource input;
   final String outputDirectory;
   final bool checkMissing;
+
+  /// Shell commands to run, in order, after a successful conversion.
+  final List<String> afterCommands;
 
   /// Resolves the input source and output directory from [options] (CLI) and
   /// [config] (file), with CLI values taking precedence.
@@ -252,10 +296,16 @@ class _Settings {
     final output = options.outputDirectory ?? config?.output ?? _defaultOutput;
     final checkMissing =
         options.checkMissing || (config?.checkMissing ?? false);
+    // CLI --after flags override the config's "after:" list when given;
+    // otherwise fall back to the config (or nothing).
+    final afterCommands = options.afterCommands.isNotEmpty
+        ? options.afterCommands
+        : (config?.afterCommands ?? const <String>[]);
     return _Settings(
       input: input,
       outputDirectory: output,
       checkMissing: checkMissing,
+      afterCommands: afterCommands,
     );
   }
 
@@ -273,13 +323,23 @@ class _Settings {
 ///   path: input/x.csv    # required when type: file
 /// output: assets/translations
 /// check_missing: true
+/// run_after: dart format assets/translations   # or a list of commands
 /// ```
 class _Config {
-  const _Config({this.input, this.output, this.checkMissing});
+  const _Config({
+    this.input,
+    this.output,
+    this.checkMissing,
+    this.afterCommands,
+  });
 
   final _InputSource? input;
   final String? output;
   final bool? checkMissing;
+
+  /// Shell commands to run after a successful conversion, or `null` when the
+  /// config omits the `after:` key.
+  final List<String>? afterCommands;
 
   /// Parses a config document loaded from [path]. Throws [InputReadException]
   /// (tagged with [path]) on any structural problem so the message points the
@@ -306,6 +366,32 @@ class _Config {
       input: input,
       output: _stringOr(path, doc['output'], 'output'),
       checkMissing: _boolOr(path, doc['check_missing'], 'check_missing'),
+      afterCommands: _commandsOr(path, doc['run_after'], 'run_after'),
+    );
+  }
+
+  /// Parses the `run_after:` key, accepting either a single command string or a
+  /// list of command strings. Returns `null` when the key is absent.
+  static List<String>? _commandsOr(String path, Object? value, String field) {
+    if (value == null) return null;
+    if (value is String) return [value];
+    if (value is YamlList) {
+      final commands = <String>[];
+      for (final item in value.nodes) {
+        final command = item.value;
+        if (command is! String) {
+          throw InputReadException(
+            path,
+            '"$field" list entries must be strings.',
+          );
+        }
+        commands.add(command);
+      }
+      return commands;
+    }
+    throw InputReadException(
+      path,
+      '"$field" must be a string or a list of strings.',
     );
   }
 
@@ -363,6 +449,7 @@ class _Options {
     this.showHelp = false,
     this.showVersion = false,
     this.checkMissing = false,
+    this.afterCommands = const [],
   });
 
   final String? inputPath;
@@ -376,6 +463,10 @@ class _Options {
   /// but missing or empty in the other languages.
   final bool checkMissing;
 
+  /// Shell commands to run, in order, after a successful conversion. Repeat
+  /// `--run-after` on the command line to queue more than one.
+  final List<String> afterCommands;
+
   /// Parses [arguments] into an [_Options], throwing [_UsageException] on any
   /// malformed flag or value.
   factory _Options.parse(List<String> arguments) {
@@ -386,6 +477,7 @@ class _Options {
     var help = false;
     var version = false;
     var checkMissing = false;
+    final afterCommands = <String>[];
 
     // Reads the value for a flag, supporting both `--flag value` and
     // `--flag=value` forms.
@@ -420,6 +512,8 @@ class _Options {
           config = next(name, inline);
         case '--check-missing':
           checkMissing = true;
+        case '-a' || '--run-after':
+          afterCommands.add(next(name, inline));
         default:
           throw _UsageException('Unknown option "$arg".');
       }
@@ -433,6 +527,7 @@ class _Options {
       showHelp: help,
       showVersion: version,
       checkMissing: checkMissing,
+      afterCommands: afterCommands,
     );
   }
 }
@@ -469,6 +564,10 @@ OPTIONS:
   -c, --config <path>         Config file (default: ./$_defaultConfigFile).
       --check-missing         Warn about keys present in the primary (first)
                               language but missing/empty in other languages.
+  -a, --run-after <command>   Shell command to run after a successful write.
+                              Repeat to run several, in order. Overrides the
+                              config file's "run_after:" list when given. A hook
+                              that fails stops the rest and fails the run.
   -h, --help                  Show this help.
   -v, --version               Show the version.
 
@@ -480,8 +579,13 @@ CONFIG FILE ($_defaultConfigFile):
     # path: input/localizations.csv
   output: assets/translations
   check_missing: true
+  run_after: dart format assets/translations   # a string, or a list:
+  # run_after:
+  #   - dart format assets/translations
+  #   - git add assets/translations
 
 EXAMPLES:
   dart run localization_sheets -i input/localizations.csv -o build/l10n
   dart run localization_sheets -u "https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv" -o assets/translations
+  dart run localization_sheets -i input/localizations.csv -a "dart format output" --run-after "git add output"
 ''';

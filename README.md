@@ -55,6 +55,7 @@ Run with `--help` for the full list.
 | `-o, --output <dir>` | Output directory. | `output` |
 | `-c, --config <path>` | Config file to read. | `localization_sheets.yaml` |
 | `--check-missing` | Warn about keys present in the [primary language](#the-primary-language) but missing/empty elsewhere. | off |
+| `-a, --run-after <command>` | Shell command to run after a successful write; [repeat](#running-commands-after-a-write) to run several. | — |
 
 Provide exactly one input — `--input` (file) or `--url` (remote) — or omit both
 and let them come from a config file.
@@ -85,9 +86,12 @@ To download a remote sheet instead, swap the `input` block:
 input:
   type: url                         # download the CSV before parsing
   url: https://docs.google.com/spreadsheets/d/{YOUR_ID}/export?format=csv
+# check_missing: true
+# run_after: one or more commands to run after parse successful
 ```
 
-`check_missing: true` in the config is the same as passing `--check-missing`.
+`check_missing: true` in the config is the same as passing `--check-missing`,
+and a `run_after:` list runs [commands once the files are written](#running-commands-after-a-write).
 See [`example/`](example/) for a complete, runnable project.
 
 ## The sheet format
@@ -157,6 +161,32 @@ Warning: keys present in the primary language "en" are missing or empty in other
 
 Warnings go to stderr and do not fail the conversion — the JSON files are still
 written.
+
+## Running commands after a write
+
+Pass `--run-after <command>` to run a shell command once the JSON files are
+written — handy for formatting, regenerating code, or staging the output. Repeat
+the flag to run several commands, in the order given:
+
+```bash
+dart run localization_sheets -i example/input/localizations.csv \
+  --run-after "dart format assets/translations" \
+  --run-after "git add assets/translations"
+```
+
+Or keep them in the config file under `run_after`, as a single string or a list:
+
+```yaml
+run_after:
+  - dart format assets/translations
+  - git add assets/translations
+```
+
+Commands run only after a successful conversion, through the platform shell
+(`/bin/sh -c`, or `cmd /c` on Windows), inheriting the terminal so their output
+streams through. If a command exits non-zero, the remaining commands are skipped
+and the tool exits with that command's exit code. Any `--run-after` flags on the
+command line replace the config file's `run_after:` list rather than adding to it.
 
 ## Screenshot
 
